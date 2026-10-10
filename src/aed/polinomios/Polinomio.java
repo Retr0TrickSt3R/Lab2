@@ -2,6 +2,7 @@ package aed.polinomios;
 
 import java.util.Arrays;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 import es.upm.aedlib.Position;
 import es.upm.aedlib.positionlist.*;
@@ -63,24 +64,7 @@ public class Polinomio {
 	 * @return la suma de los polinomios.
 	 */
 	public static Polinomio suma(Polinomio p1, Polinomio p2) {
-		Position<Monomio> posMon1 = p1.terms.first();
-		Position<Monomio> posMon2 = p2.terms.first();
-		while(posMon1 != null && posMon2 != null) {
-			Monomio mon1=posMon1.element();
-			Monomio mon2=posMon2.element();
-			
-			if(mon1.exponente()>mon2.exponente()) {
-				
-			}
-			else if(mon1.exponente()<mon2.exponente()) {
-				
-			}
-			else {
-				
-			}
-		}
-
-		return null;
+		return sumaResta(p1, p2, true);
 	}
 
 	/**
@@ -90,7 +74,7 @@ public class Polinomio {
 	 * @return la resta de los polinomios.
 	 */
 	public static Polinomio resta(Polinomio p1, Polinomio p2) {
-		return null;
+		return sumaResta(p1, p2, false);
 	}
 
 	/**
@@ -121,7 +105,11 @@ public class Polinomio {
 	 * @return el grado del polinomio
 	 */
 	public int grado() {
-		return -1;
+		if(terms.isEmpty()) {
+			return -1;
+		}
+
+		return terms.first().element().exponente();
 	}
 
 	/**
@@ -147,7 +135,21 @@ public class Polinomio {
 	 * @return el polinomio representando el derivado.
 	 */
 	public Polinomio derivada() {
-		return null;
+		PositionList<Monomio> termsResult = new NodePositionList<>();
+
+		for(Monomio mon : terms) {
+			int exp = mon.exponente()-1;
+
+			if(exp==-1) {
+				continue;
+			}
+
+			int coef = mon.coeficiente()*mon.exponente();
+
+			termsResult.addLast(new Monomio(coef, exp));
+		}
+
+		return new Polinomio(termsResult);
 	}
 
 	@Override
@@ -176,5 +178,76 @@ public class Polinomio {
 			}
 			return buf.toString();
 		}
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(!(obj instanceof Polinomio)) {
+			return false;
+		}
+
+		Polinomio pol = (Polinomio) obj;
+
+		return pol.terms.equals(this.terms);
+	}
+
+
+	private static Polinomio sumaResta(Polinomio p1, Polinomio p2, boolean esSuma) {
+		PositionList<Monomio> termsResult = new NodePositionList<>();
+
+		if(esVacio(p1)) {
+			for(Monomio mon : p2.terms) {
+				termsResult.addLast(
+						new Monomio(((esSuma) ? 1 : -1)*mon.coeficiente(), mon.exponente()));
+			}
+
+			return new Polinomio(termsResult);
+		}
+
+		if(esVacio(p2)) {
+			for(Monomio mon : p2.terms) {
+				termsResult.addLast(
+						new Monomio(mon.coeficiente(), mon.exponente()));
+			}
+
+			return new Polinomio(termsResult);
+		}
+
+		Position<Monomio> posMon1 = p1.terms.first();
+		Position<Monomio> posMon2 = p2.terms.first();
+
+		while(posMon1 != null && posMon2 != null) {
+			Monomio mon1=posMon1.element();
+			Monomio mon2=posMon2.element();
+
+			if(mon1.exponente()>mon2.exponente()) {
+				termsResult.addLast(new Monomio(mon1.coeficiente(), mon1.exponente()));
+				posMon1 = p1.terms.next(posMon1);
+			}
+			else if(mon1.exponente()<mon2.exponente()) {
+				termsResult.addLast(new Monomio(((esSuma) ? 1 : -1)*mon2.coeficiente(), mon2.exponente()));
+				posMon2 = p2.terms.next(posMon2);
+			}
+			else {
+				if(esSuma || !EsCero(mon1.coeficiente(), mon2.coeficiente(), (t, u) -> t-u)) {
+					termsResult.addLast(
+							new Monomio((esSuma) ? mon1.coeficiente()+mon2.coeficiente():mon1.coeficiente()-mon2.coeficiente()
+									, mon1.exponente()));
+				}
+				
+				posMon1 = p1.terms.next(posMon1);
+				posMon2 = p2.terms.next(posMon2);
+			}
+		}
+
+		return new Polinomio(termsResult);
+	}
+
+	private static boolean EsCero(int coef1, int coef2, BiFunction<Integer, Integer, Integer> fun) {
+		return fun.apply(coef1, coef2) == 0;
+	}
+
+	private static boolean esVacio(Polinomio pol) {
+		return pol.terms.isEmpty();
 	}
 }
