@@ -54,6 +54,22 @@ public class Polinomio {
 	 * @param polinomio - una secuencia de monomios separados por '+'
 	 */
 	public Polinomio(String polinomio) {
+		if(polinomio == null) {
+			throw new IllegalArgumentException();
+		}
+		// coef={0,x^i(1),num}
+		// exp={x(^1),x^n(n),num(^0)}
+		
+		String[] arrayPol = polinomio.split("\\+");
+		int[] coef = new int[arrayPol.length];
+		
+		for(int i=0;i<arrayPol.length;i++) {
+			arrayPol[i] = arrayPol[i].trim();
+			
+			
+		}
+		
+		
 		throw new RuntimeException("no esta implementado todavia");
 	}
 
@@ -193,61 +209,55 @@ public class Polinomio {
 
 
 	private static Polinomio sumaResta(Polinomio p1, Polinomio p2, boolean esSuma) {
-		PositionList<Monomio> termsResult = new NodePositionList<>();
+		PositionList<Monomio> resultado = new NodePositionList<>();
+		BiFunction<Integer, Integer, Integer> op = (a, b) -> (esSuma) ? a+b : a-b;
 
-		if(esVacio(p1)) {
-			for(Monomio mon : p2.terms) {
-				termsResult.addLast(
-						new Monomio(((esSuma) ? 1 : -1)*mon.coeficiente(), mon.exponente()));
-			}
+		Position<Monomio> pos1 = primero(p1);
+		Position<Monomio> pos2 = primero(p2);
 
-			return new Polinomio(termsResult);
-		}
+		while (pos1 != null || pos2 != null) {
+			int cmp = comparar(pos1, pos2);
 
-		if(esVacio(p2)) {
-			for(Monomio mon : p2.terms) {
-				termsResult.addLast(
-						new Monomio(mon.coeficiente(), mon.exponente()));
-			}
+			if (cmp > 0) { //exp1>exp2 || pos2==null
+				Monomio mon1 = pos1.element();
 
-			return new Polinomio(termsResult);
-		}
+				agregar(resultado, mon1.coeficiente(), mon1.exponente());
+				pos1 = p1.terms.next(pos1);
+			} else if (cmp < 0) { //exp1<exp2 || pos1==null
+				Monomio mon2 = pos2.element();
 
-		Position<Monomio> posMon1 = p1.terms.first();
-		Position<Monomio> posMon2 = p2.terms.first();
+				agregar(resultado, op.apply(0, mon2.coeficiente()), mon2.exponente());
+				pos2 = p2.terms.next(pos2);
+			} else { //exp1==exp2
+				Monomio mon1 = pos1.element();
+				Monomio mon2 = pos2.element();
 
-		while(posMon1 != null && posMon2 != null) {
-			Monomio mon1=posMon1.element();
-			Monomio mon2=posMon2.element();
-
-			if(mon1.exponente()>mon2.exponente()) {
-				termsResult.addLast(new Monomio(mon1.coeficiente(), mon1.exponente()));
-				posMon1 = p1.terms.next(posMon1);
-			}
-			else if(mon1.exponente()<mon2.exponente()) {
-				termsResult.addLast(new Monomio(((esSuma) ? 1 : -1)*mon2.coeficiente(), mon2.exponente()));
-				posMon2 = p2.terms.next(posMon2);
-			}
-			else {
-				if(esSuma || !EsCero(mon1.coeficiente(), mon2.coeficiente(), (t, u) -> t-u)) {
-					termsResult.addLast(
-							new Monomio((esSuma) ? mon1.coeficiente()+mon2.coeficiente():mon1.coeficiente()-mon2.coeficiente()
-									, mon1.exponente()));
-				}
-				
-				posMon1 = p1.terms.next(posMon1);
-				posMon2 = p2.terms.next(posMon2);
+				agregar(resultado, op.apply(mon1.coeficiente(), mon2.coeficiente()), mon1.exponente());
+				pos1 = p1.terms.next(pos1);
+				pos2 = p2.terms.next(pos2);
 			}
 		}
-
-		return new Polinomio(termsResult);
+		return new Polinomio(resultado);
 	}
 
-	private static boolean EsCero(int coef1, int coef2, BiFunction<Integer, Integer, Integer> fun) {
-		return fun.apply(coef1, coef2) == 0;
+	private static void agregar(PositionList<Monomio> lista, int coef, int exp) {
+		if (coef != 0) {
+			lista.addLast(new Monomio(coef, exp));
+		}
 	}
 
-	private static boolean esVacio(Polinomio pol) {
-		return pol.terms.isEmpty();
+	private static int comparar(Position<Monomio> pos1, Position<Monomio> pos2) {
+		if (pos2 == null) {
+			return 1;
+		}
+		if (pos1 == null) {
+			return -1;
+		}
+
+		return Integer.compare(pos1.element().exponente(), pos2.element().exponente());
+	}
+
+	private static Position<Monomio> primero(Polinomio p) {
+		return (p.terms.isEmpty()) ? null : p.terms.first();
 	}
 }
