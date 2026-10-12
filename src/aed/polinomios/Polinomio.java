@@ -2,6 +2,7 @@ package aed.polinomios;
 
 import java.util.Arrays;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import es.upm.aedlib.Position;
@@ -57,21 +58,23 @@ public class Polinomio {
 		if(polinomio == null) {
 			throw new IllegalArgumentException();
 		}
-		// coef={0,x^i(1),num}
-		// exp={x(^1),x^n(n),num(^0)}
-		
+		PositionList<Monomio> polinomioResultante = new NodePositionList<>();
 		String[] arrayPol = polinomio.split("\\+");
-		int[] coef = new int[arrayPol.length];
 		
 		for(int i=0;i<arrayPol.length;i++) {
 			arrayPol[i] = arrayPol[i].trim();
 			
+			int coef = coeficiente(arrayPol[i]);
+			if(coef==0) continue;
+			int exp = exponente(arrayPol[i]);
 			
+			polinomioResultante.addLast(new Monomio(coef, exp));
 		}
 		
-		
-		throw new RuntimeException("no esta implementado todavia");
+		terms = polinomioResultante;
 	}
+	
+	
 
 	/**
 	 * Suma dos polinomios.
@@ -207,7 +210,8 @@ public class Polinomio {
 		return pol.terms.equals(this.terms);
 	}
 
-
+	
+	// Métodos privados de los ejercicios obligatorios
 	private static Polinomio sumaResta(Polinomio p1, Polinomio p2, boolean esSuma) {
 		PositionList<Monomio> resultado = new NodePositionList<>();
 		BiFunction<Integer, Integer, Integer> op = (a, b) -> (esSuma) ? a+b : a-b;
@@ -259,5 +263,34 @@ public class Polinomio {
 
 	private static Position<Monomio> primero(Polinomio p) {
 		return (p.terms.isEmpty()) ? null : p.terms.first();
+	}
+	
+	// Metodos Privados para el Constructor (ejercicio opcional)
+	private int coeficiente(String mon) {
+		boolean esNegativo = mon.startsWith("-");
+		int cotaInferior = (esNegativo) ? 1 : 0;
+		int cotaSuperior = mon.indexOf("x");
+		
+		if(cotaInferior==cotaSuperior) {
+			return (esNegativo) ? -1 : 1;
+		}
+		
+		return Integer.parseInt(
+				mon.substring(0, 
+						(cotaSuperior<cotaInferior) ? mon.length() : cotaSuperior));
+	}
+	
+	private int exponente(String mon) {
+		int indexSymbExp = mon.indexOf("^");
+		
+		if(indexSymbExp != -1) {
+			return Integer.parseInt(mon.substring(indexSymbExp+1, mon.length()));
+		}
+		
+		if(mon.contains("x")) {
+			return 1;
+		}
+		
+		return 0;
 	}
 }
