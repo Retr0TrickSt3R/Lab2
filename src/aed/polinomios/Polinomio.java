@@ -105,7 +105,7 @@ public class Polinomio {
 	public static Polinomio multiplica(Polinomio p1, Polinomio p2) {
 		Polinomio acum = new Polinomio();
 		Position<Monomio> cursor = p1.terms.first();
-		while(cursor != null){
+		while(cursor != null){ //Se va acumulando el resultado monomio a monomio hasta terminar, devolviendo el polinomio final ordenado
 			acum = suma(acum,multiplica(cursor.element(),p2));
 			cursor = p1.terms.next(cursor);
 		}
@@ -121,7 +121,7 @@ public class Polinomio {
 	public static Polinomio multiplica(Monomio m, Polinomio p) {
 		Position<Monomio> cursor = p.terms.first();
 		Polinomio res = new Polinomio();
-		while(cursor != null){
+		while(cursor != null){ //Se multiplica m por los monomios de p hasta que no quede ninguno
 			res.terms.addLast(new Monomio(m.coeficiente()*cursor.element().coeficiente(),
 										  m.exponente()+cursor.element().exponente()));
 			cursor = p.terms.next(cursor);
@@ -159,7 +159,26 @@ public class Polinomio {
 	 *
 	 */
 	public static Polinomio componer(Polinomio p, Polinomio arg) {
-		return null;
+		if(p.terms.isEmpty()) return new Polinomio();
+		Position<Monomio> cursor = primero(p);
+		Polinomio acum = constante(cursor.element().coeficiente());
+		int expAnterior = cursor.element().exponente();
+		cursor = p.terms.next(cursor);
+		//Tras procesar un término con exponente e, acum vale (parte leída de p hasta ahora)*(arg)
+		//sin arg^e, es decir, falta multiplicar por arg^e; por eso se multiplica por el argumento
+		//elevado a la diferencia de exponentes en cada paso
+		while(cursor != null) {
+			int exp = cursor.element().exponente();
+			acum = multiplica(acum,potencia(arg,expAnterior-exp));
+			acum = suma(acum,constante(cursor.element().coeficiente()));
+			expAnterior = exp;
+			cursor = p.terms.next(cursor);
+		}
+		//Se compensa el último término que falta. Si el último término no es independiente,
+		//, expAnterior > 0 y sin esta linea el resultado seria incorrecto.
+		//Si el último término es el independiente, se multiplica por 1 (arg^0).
+		acum = multiplica(acum,potencia(arg,expAnterior));
+		return acum;
 	}
 
 	/**
@@ -263,6 +282,7 @@ public class Polinomio {
 		}
 	}
 
+	//Usado en sumaResta para separar casos de exponentes
 	private static int comparar(Position<Monomio> pos1, Position<Monomio> pos2) {
 		if (pos2 == null) {
 			return 1;
@@ -276,6 +296,24 @@ public class Polinomio {
 
 	private static Position<Monomio> primero(Polinomio p) {
 		return (p.terms.isEmpty()) ? null : p.terms.first();
+	}
+	
+	//Método privado para componer
+	private static Polinomio constante(int c) {
+		Polinomio res = new Polinomio();
+		res.terms.addLast(new Monomio(c,0));
+		return res;
+	}
+	
+	//Método privado para componer.
+	//Se supone k >= 0 y devuelve 1 si k == 0.
+	private static Polinomio potencia(Polinomio base, int k) {
+		Polinomio res = new Polinomio();
+		agregar(res.terms,1,0);
+		for(int i = 0; i < k; i++) {
+			res = multiplica(res,base);
+		}
+		return res;
 	}
 	
 	// Metodos Privados para el Constructor (ejercicio opcional)
@@ -306,4 +344,5 @@ public class Polinomio {
 		
 		return 0;
 	}
+	
 }
