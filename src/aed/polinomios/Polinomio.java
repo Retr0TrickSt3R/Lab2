@@ -103,7 +103,13 @@ public class Polinomio {
 	 * @return el producto de los polinomios.
 	 */
 	public static Polinomio multiplica(Polinomio p1, Polinomio p2) {
-		return null;
+		Polinomio acum = new Polinomio();
+		Position<Monomio> cursor = p1.terms.first();
+		while(cursor != null){
+			acum = suma(acum,multiplica(cursor.element(),p2));
+			cursor = p1.terms.next(cursor);
+		}
+		return acum;
 	}
 
 	/**
@@ -113,7 +119,14 @@ public class Polinomio {
 	 * @return el producto del monomio y el polinomio
 	 */
 	public static Polinomio multiplica(Monomio m, Polinomio p) {
-		return null;
+		Position<Monomio> cursor = p.terms.first();
+		Polinomio res = new Polinomio();
+		while(cursor != null){
+			res.terms.addLast(new Monomio(m.coeficiente()*cursor.element().coeficiente(),
+										  m.exponente()+cursor.element().exponente()));
+			cursor = p.terms.next(cursor);
+		}
+		return res;
 	}
 
 	/**
